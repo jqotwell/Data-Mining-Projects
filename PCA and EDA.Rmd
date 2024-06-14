@@ -49,7 +49,7 @@ In looking at the above summary, the first 3 principle components achieve more t
 **Heart Disease Data EDA**
 
 ```{r}
-cleveland<-read.table("C:\\Users\\jqotw\\Downloads\\heart+disease\\processed.cleveland.data",sep=',')
+cleveland<-read.table("processed.cleveland.data",sep=',')
 
 colnames(cleveland)<-c("Age","sex","cp","trestbps","chol","fbs","restecg","thalach","exang","oldpeak","slope","ca","thal","num")
 ```
@@ -163,7 +163,7 @@ When taking samples of the population, it minimizes/ eliminates the interaction 
 ```{r}
 #note: deleted "homework question 4" header so that function could parse column names
 library(readxl)
-gym_data=read_xlsx("C:\\Users\\jqotw\\Downloads\\hw2_2024_problem4_GymX.xlsx",col_names=TRUE)
+gym_data=read_xlsx("hw2_2024_problem4_GymX.xlsx",col_names=TRUE)
 ```
 **a) Checking missing values for each columns**
 ```{r}

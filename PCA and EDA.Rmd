@@ -12,7 +12,7 @@ library(pixmap)
 library(stats)
 
 
-picture<-read.pnm("C:\\Users\\jqotw\\Downloads\\hw2_2024_problem2_Face-1.pbm")
+picture<-read.pnm("hw2_2024_problem2_Face-1.pbm")
 data<-data.frame(picture@grey)
 components<-prcomp(data)
 ```

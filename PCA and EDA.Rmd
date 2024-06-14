@@ -1,0 +1,252 @@
+---
+title: "PCA and Data Cleaning"
+output: html_notebook
+---
+
+
+**PCA**
+**a) generating images using principal components**
+```{r}
+#importing required library to read pbm file and perform PCA
+library(pixmap)
+library(stats)
+
+
+picture<-read.pnm("C:\\Users\\jqotw\\Downloads\\hw2_2024_problem2_Face-1.pbm")
+data<-data.frame(picture@grey)
+components<-prcomp(data)
+```
+```{r}
+# printing the image for 2 principal components
+two_comp <-components$x[,1:2]%*%t(components$rotation[,1:2])
+picture2<-pixmapGrey(two_comp)
+plot(picture2,main='picture with first 2 principle components')
+```
+```{r}
+five_comp <-components$x[,1:5]%*%t(components$rotation[,1:5])
+picture5<-pixmapGrey(five_comp)
+plot(picture5,main="picture with first 5 principal components")
+```
+
+```{r}
+ten_comp <-components$x[,1:10]%*%t(components$rotation[,1:10])
+picture10<-pixmapGrey(ten_comp)
+plot(picture10, main="picture with first 10 principal components")
+```
+```{r}
+plot(picture,main='original image')
+```
+
+**b) Minimal principal components to retain 80% of variance in data**
+
+
+
+```{r}
+summary(components)
+```
+In looking at the above summary, the first 3 principle components achieve more than 80% of the variance in the data (80.9%)
+
+**Heart Disease Data EDA**
+
+```{r}
+cleveland<-read.table("C:\\Users\\jqotw\\Downloads\\heart+disease\\processed.cleveland.data",sep=',')
+
+colnames(cleveland)<-c("Age","sex","cp","trestbps","chol","fbs","restecg","thalach","exang","oldpeak","slope","ca","thal","num")
+```
+
+**a) converting from multiclass to binary**
+
+```{r}
+cleveland$num[cleveland$num>0]<-1
+mean(cleveland$num)
+```
+When converting the presence of disease category from 0-4 to 0-1 where anything that was originally 1-4 is coded is as 1, the target variable becomes 54% negative class and 46% positive class, indicating what would be considered a balanced dataset.
+
+**b) Removing Entries With Missing Values**
+
+```{r}
+is.na(cleveland)<-cleveland=='?'
+cleveland2<-na.omit(cleveland)
+print(length(cleveland2$Age))
+```
+Omitting NA values reduces the data to 297 entries.
+
+**c) Replacing NA values with column mean**
+
+```{r}
+cleveland3<-cleveland
+cleveland3$ca[is.na(cleveland3$ca)]<-mean(as.numeric(cleveland3$ca),na.rm=TRUE)
+cleveland3$thal[is.na(cleveland3$thal)]<-mean(as.numeric(cleveland3$thal),na.rm=TRUE)
+```
+```{r}
+hist(as.numeric(cleveland2$thal))
+hist(as.numeric(cleveland3$thal))
+
+hist(as.numeric(cleveland2$ca))
+hist(as.numeric(cleveland3$ca))
+```
+Imputing column means into both columns with missing values shifts the distribution of those columns slightly to the right.
+
+**d) chest pain type vs. age**
+
+```{r}
+scatter.smooth(cleveland$Age,cleveland$cp,main=" chest pain type vs. age",xlab='age',ylab='chest pain rating')
+```
+Based on the above scatter plot, chest pain type increases with age until around age 60, before slightly decreasing.
+
+**e) Boxplot of sex vs. heart disease**
+
+```{r}
+boxplot(cleveland$num~cleveland$sex,main="boxplot of heart disease presence by sex",xlab="sex(0=female)",ylab="heart disease (1=yes)?")
+```
+While the boxplot is not as spread out because of it being based on 2 binary variables, it can be seen that for females, the median for heart disease is 0 whereas men it is 1, indicating that women are less likely to have heart disease in this dataset.
+
+**f) random sampling and boxplots**
+
+```{r}
+#randomly splitting the dataset into 6 sets of 50 with one set of 3 leftover that will be ignored
+samples<-split(cleveland, sample(rep(1:7,times=c(50,50,50,50,50,50,3))))
+```
+
+i) comparing population and sample proportions
+Printing the population gender and disease proportions
+```{r}
+print("population gender proportion:")
+print(mean(cleveland$sex))
+print("population disease proportion:")
+print(mean(cleveland$num))
+```
+Printing the sample gender and disease proportions
+```{r}
+print("sample1 gender proportion:")
+print(mean(samples$'1'$sex))
+print("sample1 disease proportion:")
+print(mean(samples$'1'$num))
+print("sample2 gender proportion:")
+print(mean(samples$'2'$sex))
+print("sample2 disease proportion:")
+print(mean(samples$'2'$num))
+print("sample3 gender proportion:")
+print(mean(samples$'3'$sex))
+print("sample3 disease proportion:")
+print(mean(samples$'3'$num))
+print("sample4 gender proportion:")
+print(mean(samples$'4'$sex))
+print("sample4 disease proportion:")
+print(mean(samples$'4'$num))
+print("sample5 gender proportion:")
+print(mean(samples$'5'$sex))
+print("sample5 disease proportion:")
+print(mean(samples$'5'$num))
+print("sample6 gender proportion:")
+print(mean(samples$'6'$sex))
+print("sample6 disease proportion:")
+print(mean(samples$'6'$num))
+```
+Gender is already slightly imbalanced in favor of men in the population, but by instituting random sampling, sample 2 and sample 6 are considerably more imbalanced in favor of men than the original dataset. While disease presence is more balanced in the population (with a slight majority to no disease), random sampling tilts the balance closer to 50/50 than the population mean in all of the samples except for sample 1 where the data is considerably more imbalanced in favor of no disease than the population.
+
+ii) boxplot of each sample
+```{r}
+boxplot(samples$'1'$num~samples$'1'$sex,main="boxplot of heart disease presence by sex sample 1",xlab="sex(0=female)",ylab="heart disease (1=yes)?")
+boxplot(samples$'1'$num~samples$'3'$sex,main="boxplot of heart disease presence by sex sample 2",xlab="sex(0=female)",ylab="heart disease (1=yes)?")
+boxplot(samples$'1'$num~samples$'3'$sex,main="boxplot of heart disease presence by sex sample 3",xlab="sex(0=female)",ylab="heart disease (1=yes)?")
+boxplot(samples$'1'$num~samples$'4'$sex,main="boxplot of heart disease presence by sex sample 4",xlab="sex(0=female)",ylab="heart disease (1=yes)?")
+boxplot(samples$'1'$num~samples$'5'$sex,main="boxplot of heart disease presence by sex sample 5",xlab="sex(0=female)",ylab="heart disease (1=yes)?")
+boxplot(samples$'1'$num~samples$'6'$sex,main="boxplot of heart disease presence by sex sample 6",xlab="sex(0=female)",ylab="heart disease (1=yes)?")
+```
+**g) comparing e) and f)ii**
+
+When taking samples of the population, it minimizes/ eliminates the interaction between sex and heart disease seen in the population. In all of the 6 samples, more men don't have heart disease, which is not the case in the overall data set. However, in sample 1 and sample 4, women are overwhelmingly skewed toward not having heart disease than they are in the population. It shows how simple random sampling of even slightly imbalanced data if the sample is too small can lead to results not representative of the population as a whole.
+
+**Problem 4: Gym Data Cleaning**
+
+```{r}
+#note: deleted "homework question 4" header so that function could parse column names
+library(readxl)
+gym_data=read_xlsx("C:\\Users\\jqotw\\Downloads\\hw2_2024_problem4_GymX.xlsx",col_names=TRUE)
+```
+**a) Checking missing values for each columns**
+```{r}
+print(colSums(is.na(gym_data)))
+```
+**b) Naive Solution for Dealing with Missing Values**
+
+A naive solution for dealing with missing values would be to simply eliminate every entry that is missing a value. An advantage of this approach would be that (assuming no data collection errors), the data remaining would be 100% accurate. The first disadvantage of this approach is that, at minimum, 2976 records would be removed (the actual number will become known in part d) resulting in a smaller population for analysis. The second disadvantage would come if the missing values were not at random and certain age/gender groups were more represented in the missing values, which would cause the remaining data to not be representative of the population.
+
+**c) Proposed Solution to Missing Values**
+
+A better solution would be to leverage the fact that age and gender have no missing values to fill in membership type and estimate height and weight depending on membership type and gender. First, membership type can easily be figured out as a quick scanning of the data shows 'kids'< 'age=13','age=13'<= 'youth'<'age=18', and 'adult'>='age=18'. From there, height can be estimated by taking the mean based on gender and membership type. I am using membership type instead of age for measuring height, and instead of height for measuring age as the boxplots below show that the means are more stable and the boxplots tighter when membership type is used instead of age and height. In the case of the latter, the means are more skewed in many groups and there are more outliers in the boxplots.
+
+```{r}
+#weight boxplot as a function of height and sex
+boxplot(gym_data$weight~factor(gym_data$height)+factor(gym_data$sex),main="Boxplot of weight by age and sex groups", ylab="weight",xlab="age + sex (0 =female)")
+#weight boxplot as a function of membership and sex
+boxplot(gym_data$weight~factor(gym_data$membership_type)+factor(gym_data$sex),main="Boxplot of weight by membership type and sex groups",ylab="weight",xlab="membership type + sex (0 =female)")
+#height boxplot as a function of age and sex
+boxplot(gym_data$height~factor(gym_data$age)+factor(gym_data$sex),main="Boxplot of height by age and sex groups",ylab="height",xlab="age + sex (0 =female)")
+#height boxplot as a function of membership and sex
+boxplot(gym_data$height~factor(gym_data$membership_type)+factor(gym_data$sex),main="Boxplot of height by membership type and sex groups",ylab="height",xlab="membership type + sex (0 =female)")
+```
+**d evaluating data with both solutions**
+
+i) mean and standard deviation of weight for naive and better solutions
+```{r}
+#naive solution
+naive<-na.omit(gym_data)
+hist(naive$weight)
+print(mean(naive$weight))
+print(sd(naive$weight))
+```
+
+
+```{r}
+#better solution
+imputed<-gym_data
+#imputing values for membership type
+imputed$membership_type[imputed$age<13]<-'kids'
+imputed$membership_type[imputed$age>=18]<-'adults'
+imputed$membership_type[imputed$age>=13 & gym_data$age<18]<-'youth'
+#imputing mean heights based on membership type and sex
+imputed$height[is.na(imputed$height)& imputed$sex==0 &imputed$membership_type=='kids']<-mean(imputed$height[imputed$membership_type=='kids'& imputed$sex==0],na.rm=TRUE)
+imputed$height[is.na(imputed$height)& imputed$sex==1 &imputed$membership_type=='kids']<-mean(imputed$height[imputed$membership_type=='kids'& imputed$sex==1],na.rm=TRUE)
+imputed$height[is.na(imputed$height)& imputed$sex==0 &imputed$membership_type=='youth']<-mean(imputed$height[imputed$membership_type=='youth'& imputed$sex==0],na.rm=TRUE)
+imputed$height[is.na(imputed$height)& imputed$sex==1 &imputed$membership_type=='youth']<-mean(imputed$height[imputed$membership_type=='youth'& imputed$sex==1],na.rm=TRUE)
+imputed$height[is.na(imputed$height)& imputed$sex==0 &imputed$membership_type=='adults']<-mean(imputed$height[imputed$membership_type=='adults'& imputed$sex==0],na.rm=TRUE)
+imputed$height[is.na(imputed$height)& imputed$sex==1 &imputed$membership_type=='adults']<-mean(imputed$height[imputed$membership_type=='adults'& imputed$sex==1],na.rm=TRUE)
+#imputing mean weights based on membership type and sex
+imputed$weight[is.na(imputed$weight)& imputed$sex==0 &imputed$membership_type=='kids']<-mean(imputed$weight[imputed$membership_type=='kids'& imputed$sex==0],na.rm=TRUE)
+imputed$weight[is.na(imputed$weight)& imputed$sex==1 &imputed$membership_type=='kids']<-mean(imputed$weight[imputed$membership_type=='kids'& imputed$sex==1],na.rm=TRUE)
+imputed$weight[is.na(imputed$weight)& imputed$sex==0 &imputed$membership_type=='youth']<-mean(imputed$weight[imputed$membership_type=='youth'& imputed$sex==0],na.rm=TRUE)
+imputed$weight[is.na(imputed$weight)& imputed$sex==1 &imputed$membership_type=='youth']<-mean(imputed$weight[imputed$membership_type=='youth'& imputed$sex==1],na.rm=TRUE)
+imputed$weight[is.na(imputed$weight)& imputed$sex==0 &imputed$membership_type=='adults']<-mean(imputed$weight[imputed$membership_type=='adults'& imputed$sex==0],na.rm=TRUE)
+imputed$weight[is.na(imputed$weight)& imputed$sex==1 &imputed$membership_type=='adults']<-mean(imputed$weight[imputed$membership_type=='adults'& imputed$sex==1],na.rm=TRUE)
+
+```
+```{r}
+hist(imputed$weight)
+print(mean(imputed$weight))
+print(sd(imputed$weight))
+```
+In comparing the two approaches, my better approach increases the number of records used to the full dataset as opposed to 671 in the naive solution. Additionally, it can be inferred that more adult records had NA values as the naive histogram is bimodal where one mode is around 200 lbs and the other is less than 100 lbs whereas the better solution has modes at around 200lbs and around 170lbs with the below 100 weights a much smaller proportion. Finally, my naive solution mean is 20lbs heavier than the naive mean weight and the standard deviation is 31 lbs instead of 53 lbs. This indicates a tighter distirbution with imputed values.
+
+ii) barplots of mebership type by sex for naive and better solutions
+
+```{r}
+#naive solution
+count<-table(naive$sex,naive$membership_type)
+barplot(count,legend=rownames(count),main= "Count of membership type coded by sex (0=female)",xlab="membership type", ylab="count")
+```
+
+```{r}
+#proposed solution
+count2<-table(imputed$sex,imputed$membership_type)
+barplot(count2,main= "Count of membership type coded by sex (0=female)",xlab="membership type", ylab="count",legend=rownames(count2))
+
+```
+By using the proposed solution, it can clearly be seen that adults as a whole would be greatly underrepresented if my naive solution was implemented. This would especially be the case for adult women as they account to close to 40% of the adult memberships but only account for about 1/8th of the adults represented in the naive solution. Additionally, females are slightly underrepresented in the youth group as well. This shows how simply removing large chunks of the data to account for missing values would greatly change the data to a sample that is unrepresentative of the actual population. This would make likely diminish the accuracy/utility of any analysis done on this group compared to my solution.
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
